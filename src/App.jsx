@@ -28,6 +28,8 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [orderpopup, setOrderpopup] = useState(false);
   const [orderData,setorderData] = useState([]);
+  const [fullname,setFullName] = useState("");
+  const [phone,setPhone] = useState("");
 
 
   //tim mon an
@@ -103,7 +105,7 @@ function App() {
       if (response.ok){
         const data = await response.json()
         setEmployee(data)
-        toast.success("Success");
+        toast.success("Success",{autoClose: 2000});
       }
       else{
         toast.error("Không tìm thấy nhân viên");
@@ -128,7 +130,7 @@ function App() {
     if (response.ok){
       const data = await response.json()
       setCustomer(data)
-      toast.success("Success");
+      toast.success("Success",{autoClose: 2000});
     }
     else{
       toast.error("Không tìm thấy khách hàng");
@@ -146,7 +148,7 @@ function App() {
         const data = await response.json();
         
         setVoucher(data)
-        toast.success("Áp dụng thành công mã giảm giá " + data.code)
+        toast.success("Áp dụng thành công mã giảm giá " + data.code,{autoClose: 2000})
         
       } else {
         return;
@@ -165,10 +167,10 @@ function App() {
 
   //handle thanh toan
   const HandleThanhToan = async () => {
-    setLoading(true); // Bắt đầu loading
+    setLoading(true); 
     const orderDetails = selectedProduct.map((product) => ({
           product,
-          price: product.price,
+          price: product.price*product.quantity,
           quantity: product.quantity,
       }));  
 
@@ -193,7 +195,7 @@ function App() {
 
         if (response.ok) {
             const data = await response.json();
-            toast.success("Order thành công đơn hàng " + data.order_id);
+            toast.success("Order thành công đơn hàng " + data.order_id,{autoClose: 2000});
             setorderData(data)
             setOrderpopup(true)
         } else {
@@ -207,7 +209,31 @@ function App() {
   };
 
 
-  const togglePopup = () => setOrderpopup(!orderpopup);
+  const createCustomer = async ()=> {
+      const datareq = {
+        fullname: fullname,
+        phone: phone
+      }
+
+      const response = await fetch("http://localhost:8080/api/customers",{
+        method : "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(datareq),
+      })
+      
+      if (response.ok) {
+        toast.success("Tạo thành công khách hàng",{autoClose: 2000});
+        
+      } else {
+        toast.error("Lỗi",{autoClose: 2000});
+      }
+
+      setModelopen(!modelopen);
+
+  }
+
   
 
 
@@ -423,12 +449,12 @@ function App() {
             <div className="w-100 h-fit bg-white rounded-md border-1 flex flex-col p-10 gap-1">
                               <p className="text-2xl mb-3">Thêm Khách Hàng</p>
                               <label htmlFor="fullname">Tên</label>
-                              <input id="fullname" type="text" placeholder="" className="w-full p-2 border-black border-2 rounded-md" />
+                              <input id="fullname" type="text" value={fullname} onChange={(e) => setFullName(e.target.value)} placeholder="" className="w-full p-2 border-black border-2 rounded-md" />
                               <label htmlFor="phone">Số điện thoại</label>
-                              <input id="phone" type="text" placeholder="" className="w-full p-2 border-black border-2 rounded-md " /> 
+                              <input id="phone" type="text" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="" className="w-full p-2 border-black border-2 rounded-md " /> 
                               <div className="ouline-none flex justify-end gap-3 mt-3">
-                                  <button className="p-2 text-white bg-red-500 rounded-md hover:cursor-pointer">Hủy</button>
-                                  <button className="p-2 text-white bg-blue-500 rounded-md hover:cursor-pointer">Lưu</button>
+                                  <button onClick={() => setModelopen(!modelopen)} className="p-2 text-white bg-red-500 rounded-md hover:cursor-pointer">Hủy</button>
+                                  <button onClick={() => createCustomer()} className="p-2 text-white bg-blue-500 rounded-md hover:cursor-pointer">Lưu</button>
                             </div>
               </div>
           </div>
@@ -449,7 +475,7 @@ function App() {
       
 
             <p><strong>Khách Hàng: </strong>{orderData.customer.fullname}</p>
-            <p><strong>SĐT: </strong>{orderData.customer.phone}</p>
+            <p><strong>SĐT KH: </strong>{orderData.customer.phone}</p>
 
             <h3 className="mt-4 font-semibold text-lg">Chi Tiết Đơn Hàng</h3>
             <div>
@@ -468,7 +494,9 @@ function App() {
                 </div>
               ))}
             </div>
+            
 
+            <p><strong>Giảm giá: </strong>{parseInt(orderData.voucher.discount)} %</p>
             <p><strong>Tổng Tiền: </strong>{orderData.total_amount.toLocaleString()} VND</p>
             
             
